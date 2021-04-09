@@ -29,5 +29,6 @@ jobs:
         use-only-tar-bz2: true
     - name: Run tests
       run: |
+        conda activate landcover-mapping
         python -m pytest
         python -m black --check --diff .
