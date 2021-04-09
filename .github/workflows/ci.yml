@@ -10,6 +10,9 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -l {0}
     steps:
     - uses: actions/checkout@v2
     - name: Cache conda
@@ -29,7 +32,5 @@ jobs:
         use-only-tar-bz2: true
     - name: Run tests
       run: |
-        conda info
-        conda list
         python -m pytest
         python -m black --check --diff .
