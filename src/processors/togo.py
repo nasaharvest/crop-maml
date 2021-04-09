@@ -78,7 +78,7 @@ class TogoProcessor(BaseProcessor):
         # now, we only want to keep the labels where at least two labellers agreed
         df.loc[:, "sum"] = df[labels].sum(axis=1)
 
-        assert len(filepaths) == 4, f"The logic in process_eval_shapefile assumes 4 labellers"
+        assert len(filepaths) == 4, "The logic in process_eval_shapefile assumes 4 labellers"
         df.loc[:, "is_crop"] = 0
         # anywhere where two labellers agreed is crop, we will label as crop
         # this means that rows with 0 or 1 labeller agreeing is crop will be left as non crop
