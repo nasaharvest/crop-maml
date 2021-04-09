@@ -8,11 +8,11 @@ on:
       - main
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: Cache conda
+    - uses: actions/checkout@v2
+    - name: Cache conda
       uses: actions/cache@v1
       env:
         CACHE_NUMBER: 0
