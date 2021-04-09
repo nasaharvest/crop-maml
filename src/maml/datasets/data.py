@@ -161,7 +161,7 @@ class TestBaseLoader(BaseDataLoader):
             torch.from_numpy(y).float().to(self.device),
         )
 
-    def cross_val(self, seed: int, negative_sample_ratio: float, sample_from: int) -> None:
+    def cross_val(self, seed: int) -> None:
         raise NotImplementedError
 
 
@@ -195,31 +195,13 @@ class TogoMetaLoader(TestBaseLoader):
             for subset in ["training", "testing"]
         }
 
-    def cross_val(self, seed: int, negative_sample_ratio: float, sample_from: int) -> None:
-        print("No negative sampling for the Togo dataset")
+    def cross_val(self, seed: int) -> None:
         set_seed(seed)
 
-        if sample_from == -1:
-            # we shuffle the training indices, so that when sample_train is called
-            # (which is deterministic) it will return different samples
-            random.shuffle(self.subset_to_tasks["training"].positive_indices)
-            random.shuffle(self.subset_to_tasks["training"].negative_indices)
-        else:
-            positive_indices = self.subset_to_tasks["training"].positive_indices
-            negative_indices = self.subset_to_tasks["training"].negative_indices
-
-            sample_from_pos = positive_indices[: sample_from // 2]
-            sample_from_neg = negative_indices[: sample_from // 2]
-
-            random.shuffle(sample_from_pos)
-            random.shuffle(sample_from_neg)
-
-            self.subset_to_tasks["training"].positive_indices = (
-                sample_from_pos + positive_indices[sample_from // 2 :]
-            )
-            self.subset_to_tasks["training"].negative_indices = (
-                sample_from_neg + negative_indices[sample_from // 2 :]
-            )
+        # we shuffle the training indices, so that when sample_train is called
+        # (which is deterministic) it will return different samples
+        random.shuffle(self.subset_to_tasks["training"].positive_indices)
+        random.shuffle(self.subset_to_tasks["training"].negative_indices)
 
 
 class FromPathsTestLoader(TestBaseLoader):
@@ -285,7 +267,7 @@ class FromPathsTestLoader(TestBaseLoader):
         training_set = [path for path in training_set if path not in test_set]
         return training_set, test_set
 
-    def cross_val(self, seed: int, negative_sample_ratio: float, sample_from: int) -> None:
+    def cross_val(self, seed: int) -> None:
         r"""
         When we have a very small test set, we use will
         train the model multiple times using
@@ -293,19 +275,10 @@ class FromPathsTestLoader(TestBaseLoader):
         allow us to understand the "true" performance of the
         model, reducing the noisiness of having a tiny test set
         """
-        if sample_from != -1:
-            raise RuntimeError("sample_from not implemented for test paths datasets")
         set_seed(seed)
 
         pos_train, pos_test = self.split_train_test(self.positive_paths, self.num_test)
         neg_train, neg_test = self.split_train_test(self.negative_paths, self.num_test)
-
-        if negative_sample_ratio < 1:
-            num_samples = int(negative_sample_ratio * len(neg_train))
-            # its fine to do this, because the negative paths were shuffled
-            # in split_train_test
-            print(f"Using {num_samples} negative examples out of {len(neg_train)}")
-            neg_train = neg_train[:num_samples]
 
         self.subset_to_tasks = {
             "testing": KenyaCropTypeFromPaths(

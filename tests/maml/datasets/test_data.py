@@ -48,13 +48,13 @@ class TestFromPathsTestLoader:
         assert len(set(test_paths).intersection(set(train_paths))) == 0
         assert len(set(test_paths)) == len(test_paths) == 4
 
-        loader.cross_val(seed=0, negative_sample_ratio=1, sample_from=-1)
+        loader.cross_val(seed=0)
         train_paths = loader.subset_to_tasks["training"].pickle_files
         test_paths = loader.subset_to_tasks["testing"].pickle_files
         assert len(set(test_paths).intersection(set(train_paths))) == 0
         assert len(set(test_paths)) == len(test_paths) == 4
 
-        loader.cross_val(seed=2, negative_sample_ratio=1, sample_from=-1)
+        loader.cross_val(seed=2)
         train_paths = loader.subset_to_tasks["training"].pickle_files
         test_paths = loader.subset_to_tasks["testing"].pickle_files
         assert len(set(test_paths).intersection(set(train_paths))) == 0

@@ -34,6 +34,28 @@ from typing import Dict, Tuple, Optional, List
 
 
 class Learner:
+    """
+    The MAML learner.
+
+    :param data_folder: The path to the data folder. Training arrays
+        should be stored in data_folder / features
+    :param k: The number of positive and negative samples to use per task
+        for the inner loop training
+    :param update_val_size: The number of positive and negative samples to use
+        per task for the outer loop training
+    :param classifier_vector_size: The size of the LSTM hidden vector
+    :param classifier_dropout: Dropout to use between LSTM timesteps
+    :param classifier_base_layers: Number of LSTM layers to use
+    :param remove_b1_b10: Whether to remove B1 and B10 bands from the timeseries
+    :param cache: Whether to save arrays in memory to speed training up
+    :param use_cuda: If available, whether to use a GPU
+    :param val_size: The ratio of tasks to use as validation tasks
+    :param negative_crop_sampling: For crop type tasks, oversample other crops in
+        the negative class by this much
+    :param validate_on_crop_types: Whether to include crop type tasks in the validation
+        tasks. If False, they will all be used for training
+    """
+
     def __init__(
         self,
         data_folder: Path,
@@ -231,7 +253,7 @@ class Learner:
         self.model_info[f"{prefix}train_tasks"] = list(train_tasks.keys())
         self.model_info["{prefix}val_tasks"] = list(val_tasks.keys())
 
-    def fast_adapt(
+    def _fast_adapt(
         self,
         batch: Tuple[torch.Tensor, torch.Tensor],
         learner: nn.Module,
@@ -289,13 +311,38 @@ class Learner:
         meta_lr: float = 0.001,
         min_meta_lr: float = 0.00001,
         max_adaptation_steps: int = 3,
-        num_iterations: int = 1000,
+        num_iterations: int = 2000,
         noise_factor: float = 0,
         save_best_val: bool = True,
         checkpoint_every: int = 20,
         save_train_task_results: bool = True,
         schedule: bool = False,
     ) -> None:
+        """
+        Train the MAML model
+
+        :param update_lr: The learning rate to use when learning a specific task
+            (inner loop learning rate)
+        :param meta_lr: The learning rate to use when updating the MAML model
+            (outer loop learning rate)
+        :param min_meta_lr: The minimum meta learning rate to use for the cosine
+            annealing scheduler. Only used if `schedule == True`
+        :param max_adaptation_steps: The maximum number of adaptation steps to be used
+            per task. Each task will do as many adaptation steps as possible (up to this
+            upper bound) given the number of unique positive and negative data instances
+            it has
+        :param num_iterations: The number of iterations to train the meta-model for. One
+            iteration is a complete pass over all the tasks
+        :param noise_factor: The amount of gaussian noise to add to the timeseries
+        :param save_best_val: Whether to save the model with the best validation score,
+            as well as the final model
+        :param checkpoint_every: The model prints out training statistics every
+            `checkpoint_every` iteration
+        :param save_train_tasks_results: Whether to save the results for the training
+            tasks to a json object
+        :param schedule: Whether to use cosine annealing on the meta learning rate during
+            training
+        """
 
         self.train_info = {
             "update_lr": update_lr,
@@ -357,7 +404,7 @@ class Learner:
                 weight, batch = self.train_dl.sample_task(
                     task_label, k=final_k, noise_factor=noise_factor
                 )
-                _, _, evaluation_error, train_auc = self.fast_adapt(
+                _, _, evaluation_error, train_auc = self._fast_adapt(
                     batch, learner, k=k, val_size=update_val_size, calc_auc_roc=True
                 )
 
@@ -395,7 +442,7 @@ class Learner:
                 weight, val_batch = self.val_dl.sample_task(
                     val_label, k=final_k, noise_factor=noise_factor
                 )
-                _, _, val_error, val_auc = self.fast_adapt(
+                _, _, val_error, val_auc = self._fast_adapt(
                     val_batch, learner, k=k, val_size=update_val_size, calc_auc_roc=True
                 )
 
@@ -433,7 +480,7 @@ class Learner:
                 if mean_mv <= best_val_score:
                     best_val_score = mean_mv
                     if save_best_val:
-                        self.checkpoint(iteration=iteration_num)
+                        self._checkpoint(iteration=iteration_num)
 
                 if iteration_num % checkpoint_every == 0:
                     print(
@@ -463,7 +510,7 @@ class Learner:
         with (self.version_folder / "final_model.pkl").open("wb") as mf:
             dill.dump(self, mf)
 
-    def checkpoint(self, iteration: int) -> None:
+    def _checkpoint(self, iteration: int) -> None:
 
         checkpoint_files = list(self.version_folder.glob("checkpoint*"))
         if len(checkpoint_files) > 0:
@@ -475,24 +522,31 @@ class Learner:
     def test(
         self,
         test_dataset_name: str,
+        num_samples: int,
         train_k: Optional[int] = None,
-        num_samples: Optional[int] = None,
-        num_grad_steps: int = 30,
-        momentum: float = 0,
+        num_grad_steps: int = 2000,
         prefix: Optional[str] = None,
-        save_preds_per_iteration: bool = False,
         save_state_dict: bool = True,
         seed: Optional[int] = None,
         test_mode: str = "maml",
-        num_cross_val: int = 1,
-        negative_sample_ratio: float = 1,
-        sample_from: int = -1,
+        num_cross_val: int = 10,
     ) -> None:
         r"""
-        :param train_k: The batch size which will be passed. If None, model["k"] will be used.
-        :param num_samples: The number of samples to use. For now, should be a multiple of
-            train_k. If None, model["k"] will be used.
-            If num_samples == -1, then all the available training data (i.e. max_k) will be used.
+        Take the trained MAML model, and finetune it on one of the test datasets
+
+        :param train_dataset_name: One of {"Togo", "common_beans", "coffee"}
+        :num_samples: The number of samples to use from the test task
+        :param train_k: The training k to use. If None, defaults to the k used when training
+            the MAML model
+        :param num_grad_steps: The number of gradient steps to finetune the model for
+        :param prefix: The prefix to use when saving the model results
+        :param save_state_dict: Whether to save the final state dict of the classifier
+        :param seed: The random seed to use
+        :test_mode: One of {"maml", "pretrained", "random"} - which weights to use when starting
+            the finetuning. "pretrained" requires the pretrain.py script to have been run for this
+            MAML version
+        :param num_cross_val: The number of cross validation runs to do (i.e. how often this model
+            should be finetuned with a different random seed)
         """
         if seed is not None:
             set_seed(seed)
@@ -515,8 +569,6 @@ class Learner:
 
         if train_k is None:
             train_k = self.model_info["k"]
-        if num_samples is None:
-            num_samples = train_k * 2
 
         org_model = Classifier(
             input_size=self.model_info["input_size"],
@@ -543,14 +595,8 @@ class Learner:
                 test_dl,
                 dl_seed=i,
                 num_grad_steps=num_grad_steps,
-                momentum=momentum,
                 num_samples=num_samples,
-                negative_sample_ratio=negative_sample_ratio,
                 train_k=train_k,
-                prefix=prefix,
-                save_preds_per_iteration=save_preds_per_iteration,
-                cv_run=i,
-                sample_from=sample_from,
             )
 
             file_id = f"cv_{i}_{test_dataset_name}_{test_mode}"
@@ -582,14 +628,8 @@ class Learner:
         test_dl: TestBaseLoader,
         dl_seed: int,
         num_grad_steps: int,
-        momentum: float,
         num_samples: int,
         train_k: int,
-        prefix: str,
-        save_preds_per_iteration: bool,
-        cv_run: int,
-        negative_sample_ratio: float,
-        sample_from: int,
     ) -> Tuple[Classifier, Dict]:
 
         # we make a new model
@@ -604,7 +644,7 @@ class Learner:
         # then copy over the weights
         model.load_state_dict(org_model.state_dict())
 
-        opt = optim.SGD(model.parameters(), lr=self.train_info["update_lr"], momentum=momentum)
+        opt = optim.SGD(model.parameters(), lr=self.train_info["update_lr"])
 
         state: Optional[List[int]] = None  # used when sampling
 
@@ -615,7 +655,7 @@ class Learner:
             "test_accuracy": [],
         }
 
-        test_dl.cross_val(dl_seed, negative_sample_ratio, sample_from)
+        test_dl.cross_val(dl_seed)
 
         # we divide by 2, because sample_train samples for both the
         # positive and negative values
@@ -631,15 +671,6 @@ class Learner:
 
         test_x, test_y = test_dl.get_test_data()
         test_y_np = test_y.cpu().numpy()
-
-        preds_folder: Optional[Path] = None
-        if save_preds_per_iteration:
-            assert self.version_folder is not None
-            preds_folder = self.version_folder / f"{prefix}_cv_{cv_run}_test_preds"
-            preds_folder.mkdir()
-            np.save(preds_folder / "y.npy", test_y.cpu().numpy())
-        else:
-            preds_folder = None
 
         for i in tqdm(range(num_grad_steps)):
 
@@ -672,9 +703,5 @@ class Learner:
 
                 test_preds_binary = (test_preds >= 0.5).astype(int)
                 test_results["test_accuracy"].append(accuracy_score(test_y_np, test_preds_binary))
-
-                if save_preds_per_iteration:
-                    assert isinstance(preds_folder, Path)
-                    np.save(preds_folder / f"{i}_preds.npy", test_preds)
 
         return model, test_results
