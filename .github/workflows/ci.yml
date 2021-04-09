@@ -23,10 +23,11 @@ jobs:
     - uses: conda-incubator/setup-miniconda@v2
       with:
         activate-environment: landcover-mapping
+        channel-priority: strict
         environment-file: environment.yml
         auto-activate-base: false
+        use-only-tar-bz2: true
     - name: Run tests
       run: |
-        conda list
-        pytest
-        black --check --diff .
+        python -m pytest
+        python -m black --check --diff .
