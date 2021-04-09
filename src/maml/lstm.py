@@ -7,7 +7,6 @@ from typing import Tuple, Optional, List
 
 
 class Classifier(nn.Module):
-
     def __init__(
         self,
         input_size: int,
