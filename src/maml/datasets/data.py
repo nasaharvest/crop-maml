@@ -182,7 +182,7 @@ class TogoMetaLoader(TestBaseLoader):
         self.remove_b1_b10 = remove_b1_b10
         self.device = device
 
-        assert normalizing_dict is not None, f"Normalizing dict can't be computed from the test set"
+        assert normalizing_dict is not None, "Normalizing dict can't be computed from the test set"
         self.normalizing_dict = normalizing_dict
 
         self.subset_to_tasks = {
@@ -237,7 +237,7 @@ class FromPathsTestLoader(TestBaseLoader):
         self.device = device
         self.cache = cache
 
-        assert normalizing_dict is not None, f"Normalizing dict can't be computed from the test set"
+        assert normalizing_dict is not None, "Normalizing dict can't be computed from the test set"
         self.normalizing_dict = normalizing_dict
 
         self.positive_paths = positive_paths

@@ -8,11 +8,14 @@ on:
       - main
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -l {0}
     steps:
-      - uses: actions/checkout@v2
-      - name: Cache conda
+    - uses: actions/checkout@v2
+    - name: Cache conda
       uses: actions/cache@v1
       env:
         CACHE_NUMBER: 0
@@ -23,9 +26,11 @@ jobs:
     - uses: conda-incubator/setup-miniconda@v2
       with:
         activate-environment: landcover-mapping
+        channel-priority: strict
         environment-file: environment.yml
         auto-activate-base: false
+        use-only-tar-bz2: true
     - name: Run tests
       run: |
-        pytest
-        black --check --diff .
+        python -m pytest
+        python -m black --check --diff .

@@ -79,7 +79,7 @@ class PretrainingData(Dataset):
 
     @staticmethod
     def check_for_nones(pickle_files: List[Path]) -> List[Path]:
-        print(f"Checking labels")
+        print("Checking labels")
         output_files = []
         for filepath in tqdm(pickle_files):
             with filepath.open("rb") as f:

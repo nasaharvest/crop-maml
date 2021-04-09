@@ -130,7 +130,7 @@ class BaseEngineer(ABC):
 
         assert (
             num_bands % bands_per_timestep == 0
-        ), f"Total number of bands not divisible by the expected bands per timestep"
+        ), "Total number of bands not divisible by the expected bands per timestep"
 
         cur_band = 0
         while cur_band + bands_per_timestep <= num_bands:
