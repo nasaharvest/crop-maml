@@ -13,6 +13,10 @@ The main entrypoints into the pipeline are [scripts](scripts). Specifically:
 * [scripts/ensemble.py](scripts/ensemble.py) takes weights saved by [test.py](scripts/test.py) and ensembles them to create maps
 * [scripts/pretrain.py](scripts/pretrain.py) trains a model on all data, for a transfer learning baseline
 
+Two crop type maps created using few positive labelled points are available on [Google Earth Engine](https://code.earthengine.google.com/39a0fedfc7ac7f21c3dcb06eab29917d):
+* [Coffee map for 2019-2020 season in Luís Eduardo Magalhães municipality, Brazil](https://code.earthengine.google.com/6d348205d0313a0fdf1ebeaf14edd359)
+* [Common bean map for 2019-2020 season in Busia, Kenya](https://code.earthengine.google.com/7ebf03937d5c376dd657dba1d881e789)
+
 ## Setup
 
 [Anaconda](https://www.anaconda.com/download/#macos) running python 3.6 is used as the package manager. To get set up
