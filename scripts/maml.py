@@ -8,10 +8,8 @@ from src.maml.learner import Learner
 
 def maml():
 
-    learner = Learner(data_folder=Path("../data"), cache=False, k=10, task_weight=None)
-    learner.train(
-        num_iterations=2000, max_adaptation_steps=1, noise_factor=0, balancing_ratio=False
-    )
+    learner = Learner(data_folder=Path("../data"))
+    learner.train()
 
 
 if __name__ == "__main__":

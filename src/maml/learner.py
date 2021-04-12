@@ -310,9 +310,9 @@ class Learner:
         update_lr: float = 0.001,
         meta_lr: float = 0.001,
         min_meta_lr: float = 0.00001,
-        max_adaptation_steps: int = 3,
+        max_adaptation_steps: int = 1,
         num_iterations: int = 2000,
-        noise_factor: float = 0,
+        noise_factor: float = 0.0,
         save_best_val: bool = True,
         checkpoint_every: int = 20,
         save_train_task_results: bool = True,
@@ -661,6 +661,10 @@ class Learner:
         # positive and negative values
         train_batch_total = None
         if num_samples != -1:
+            assert num_samples >= train_k * 2, (
+                f"Not enough samples ({num_samples}) for the training k "
+                f"({train_k}) - must be at least double"
+            )
             train_batch_total = test_dl.sample_train(num_samples // 2)
             test_results["num_samples"] = train_batch_total[0].shape[0]
         else:

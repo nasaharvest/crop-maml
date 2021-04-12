@@ -27,6 +27,7 @@ def process_files():
         MaliProcessor,
     ]:
         processor = processor_class(Path("../data"))
+        print(f"Processing {processor.dataset}")
         processor.process()
 
 
