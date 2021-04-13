@@ -17,6 +17,23 @@ Two crop type maps created using few positive labelled points are available on [
 * [Coffee map for 2019-2020 season in Luís Eduardo Magalhães municipality, Brazil](https://code.earthengine.google.com/6d348205d0313a0fdf1ebeaf14edd359)
 * [Common bean map for 2019-2020 season in Busia, Kenya](https://code.earthengine.google.com/7ebf03937d5c376dd657dba1d881e789)
 
+### Replicating experiments in the paper
+Note: not all datasets used are public, so results cannot be exactly replicated.
+
+1. Download the [LEM+](https://www.sciencedirect.com/science/article/pii/S2352340920314359) dataset, and save it in `data/raw/lem_brazil`
+2. Export the GeoWiki labels, by running `export_geowiki` in `scripts/export.py`
+3. Process all the labels, by running `scripts/process.py`
+4. Export the Sentinel Earth Engine tif files by running the other functions in `scripts/export.py`
+5. Combine the labels and raw satellite imagery into `(X, y)` training data by running `scripts/engineer.py`
+6. Train the MAML model by running `maml.py`. The MAML model and training results will be saved in `data/maml_models/version_<VERSION>`, where VERSION increments for each MAML run.
+7. Finetune 10 MAML model with the following commands, bootstrapping the training data each run: (adding `--test_mode {pretrained, random}` will train the baseline models)
+
+```bash
+python maml_test.py --version <VERSION> --dataset Togo --many_n --num_cv 10  # Finetune on the Togo data across varying sample sizes
+python maml_test.py --version <VERSION> --dataset coffee --num_samples {-1, 40} --num_cv 10  # Finetune on the coffee dataset for all negative samples, or 20 positive and 20 negative samples
+python maml_test.py --version <VERSION> --dataset common_beans --num_samples {-1, 64}, --num_cv 10  # Finetune on the common beans dataset for all negative samples, or 32 positive and 32 negative samples
+```
+
 ## Setup
 
 [Anaconda](https://www.anaconda.com/download/#macos) running python 3.6 is used as the package manager. To get set up
