@@ -1,6 +1,6 @@
 # Meta-learning for crop mapping
 
-This repository contains the implementation of "Learning to predict crop type from heterogeneous sparse labels using meta-learning", which will be published at the GeoVision workshop at CVPR 2020.
+This repository contains the implementation of "Learning to predict crop type from heterogeneous sparse labels using meta-learning", which will be published at the [EarthVision workshop](http://www.classic.grss-ieee.org/earthvision/dates.html) at CVPR 2021.
 
 ## Pipeline
 The main entrypoints into the pipeline are [scripts](scripts). Specifically:
