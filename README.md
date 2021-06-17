@@ -1,6 +1,6 @@
 # Meta-learning for crop mapping
 
-This repository contains the implementation of "Learning to predict crop type from heterogeneous sparse labels using meta-learning", which will be published at the [EarthVision workshop](http://www.classic.grss-ieee.org/earthvision/dates.html) at CVPR 2021.
+This repository contains the implementation of [Learning to predict crop type from heterogeneous sparse labels using meta-learning](https://openaccess.thecvf.com/content/CVPR2021W/EarthVision/html/Tseng_Learning_To_Predict_Crop_Type_From_Heterogeneous_Sparse_Labels_Using_CVPRW_2021_paper.html), published at the [EarthVision workshop](http://www.classic.grss-ieee.org/earthvision/dates.html) at CVPR 2021.
 
 ## Pipeline
 The main entrypoints into the pipeline are [scripts](scripts). Specifically:
@@ -76,4 +76,19 @@ The following tests can be run against the pipeline:
 ```bash
 pytest  # unit tests, written in the test folder
 black .  # code formatting
+```
+
+#### Reference
+
+If you find this code useful, please cite the following paper:
+
+```
+@InProceedings{Tseng_2021_CVPR,
+    author    = {Tseng, Gabriel and Kerner, Hannah and Nakalembe, Catherine and Becker-Reshef, Inbal},
+    title     = {Learning To Predict Crop Type From Heterogeneous Sparse Labels Using Meta-Learning},
+    booktitle = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) Workshops},
+    month     = {June},
+    year      = {2021},
+    pages     = {1111-1120}
+}
 ```
